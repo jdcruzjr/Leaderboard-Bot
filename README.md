@@ -7,5 +7,5 @@ Functions/Commands for bot:
 - Add a win to a game for a specific player (i.e. add 1 point to Jose for Monopoly)
   - Allow for partial points (i.e. 0.67)
 - Remove a win from a game for a specific player (i.e. minus 1 point from Ryan for Monopoly)
-- Show top players for a specific game (i.e. top 3)
+- Show ranking for a specific game (i.e. top 3 or show all players place on leaderboard)
 - Remove a player from leaderboard (i.e. remove Carrots from Monopoly)
