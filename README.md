@@ -16,3 +16,7 @@ Additional Features:
 - Reset a players score to 0 (add confirmation)
 - Remove the leaderboard entirely (add confirmation)
 - Reset a leaderboard all to 0 (add confirmation)
+
+Notes:
+- Use Pillow (PIL) library to create podium image
+- Use SQLite database to store data
