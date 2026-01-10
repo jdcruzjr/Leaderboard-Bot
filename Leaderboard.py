@@ -1,4 +1,5 @@
 import heapq
+import copy 
 
 class Leaderboard:
     """
@@ -6,14 +7,19 @@ class Leaderboard:
     for players in a game or competition.
     """
 
-    def __init__(self, name, top_entries):
+    def __init__(self, name, k = None):
         """
         The constructor method initializes the Leaderboard instance with a name and top entries.
         """
-        self.name = name
-        self.top_entries = top_entries  # List to hold top leaderboard entries (e.g., top 3,5,10 players in a leaderboard)
+        self.name = name 
         self.lb = []  # Heap to store leaderboard entries
         # Need to store scores as negative to make it a max heap
+        
+        #Set the podium player count/top leaderboard entries (e.g., top 3,5,10 players in a leaderboard)
+        if k is None: 
+            self.k = 3 
+        else: self.k = k
+
 
     def add_player(self, player_name, score = None):
         if score is None:
@@ -77,4 +83,15 @@ class Leaderboard:
         for player_name, score in range(len(self.lb)):
             self.lb[index] = (0, player_name)
             index += 0
-        
+    
+    def change_k(self, k):
+        if k < 3 or k != 3 or k != 5 or k!= 7:
+            return
+        else:
+            self.k = k
+            
+    def get_list_of_players_ordered(self):
+        return copy.deepcopy(self.lb)
+    
+    def get_name(self):
+        return self.name

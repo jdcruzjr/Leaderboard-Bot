@@ -1,2 +1,4 @@
 Pillow
 requests
+discord.py
+python-dotenv
