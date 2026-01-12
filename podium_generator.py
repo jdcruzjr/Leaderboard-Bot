@@ -7,6 +7,13 @@ from PIL import Image, ImageDraw, ImageFont
 import requests
 from io import BytesIO
 
+# TODO: Make 1, 3, and 5 place podiums
+    # Adjust draw_podium_blocks function to make stands based on number of places user wants to display
+    # Adjust draw_podium_blocks function to make size of stands based on ties
+# TODO: Account for ties in the leaderboard
+    # Adjust above
+    # Adjust add_text_to_podium to label podium stands based on standings (if tie -> label both stands with higher ranking)
+
 def download_pfp(pfp_url):
     """
     Download a Discord pfp from URL.
