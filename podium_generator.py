@@ -63,7 +63,29 @@ def create_podium_base(width, height, background_color):
     Returns:
         Image: Blank canvas image
     """
-    pass
+    canvas = Image.new("RGBA", (width, height), background_color) # Creates blank canvas for podium
+
+    return canvas
+
+def draw_podium_block_rounded_top(draw, x1, y1, x2, y2, radius, fill_color):
+    """
+    Helper method for draw_podium_blocks
+    
+    Draw a rectangle with only top corners rounded
+    """
+    # Draw the main rectangle (no rounded corners)
+    draw.rectangle([(x1, y1 + radius), (x2, y2)], fill=fill_color)
+    
+    # Draw rounded top-left corner
+    draw.pieslice([(x1, y1), (x1 + radius*2, y1 + radius*2)], 
+                  start=180, end=270, fill=fill_color)
+    
+    # Draw rounded top-right corner  
+    draw.pieslice([(x2 - radius*2, y1), (x2, y1 + radius*2)], 
+                  start=270, end=360, fill=fill_color)
+    
+    # Fill in the top middle section
+    draw.rectangle([(x1 + radius, y1), (x2 - radius, y1 + radius)], fill=fill_color)
 
 def draw_podium_blocks(draw, canvas_width, canvas_height):
     """
@@ -74,7 +96,38 @@ def draw_podium_blocks(draw, canvas_width, canvas_height):
         canvas_width (int): Width of canvas
         canvas_height (int): Height of canvas
     """
-    pass
+    block_width = canvas_width / 3
+
+    first_height = 350
+    second_height = 250
+    third_height = 200
+
+    # Draw 2nd Place (Left block)
+    draw_podium_block_rounded_top(
+        draw, 
+        0, canvas_height - second_height,
+        block_width, canvas_height,
+        radius=20,
+        fill_color=(192, 192, 192)
+    ) # Silver rectangle
+
+    # Draw 1st Place (Middle block)
+    draw_podium_block_rounded_top(
+        draw, 
+        block_width, canvas_height - first_height,
+        block_width * 2, canvas_height,
+        radius=20,
+        fill_color=(255, 215, 0)
+    ) # Gold rectangle
+
+    # Draw 3rd Place (Right block)
+    draw_podium_block_rounded_top(
+        draw, 
+        block_width * 2, canvas_height - third_height,
+        canvas_width, canvas_height,
+        radius=20,
+        fill_color=(205, 127, 50)
+    ) # Bronze rectangle
 
 def add_text_to_podium(draw, username, position, x, y, font):
     """
@@ -88,7 +141,22 @@ def add_text_to_podium(draw, username, position, x, y, font):
         y (int): Y coordinate for text
         font (ImageFont): Font to use
     """
-    pass
+    # TODO: Review code and write comments and maybe have it so that coordinates of the texts are calculated within the function
+
+    # Draw rank number on podium (e.g. "1", "2", "3")
+    rank_text = str(position)
+
+    # Get rank text dimensions
+    bbox = draw.textbbox((0,0), rank_text, font=font)
+    rank_width = bbox[2] - bbox[0]
+    rank_height = bbox[3] - bbox[1]
+
+    # Center the rank at (x, y)
+    rank_x = x - (rank_width / 2)
+    rank_y = y - (rank_height / 2)
+    draw.text((rank_x, rank_y), rank_text, fill = (0,0,0), font=font)
+
+    # TODO: Add code to write username below the rank number
 
 
 def generate_podium_image(top_players, output_path="podium.png"):
@@ -105,6 +173,8 @@ def generate_podium_image(top_players, output_path="podium.png"):
     """
     pass 
 
+    # TODO: Put it all together to build podium
+
 # For testing purposes
 if __name__ == "__main__":
     test_url = "https://cdn.discordapp.com/avatars/224609705555656705/f5694ee8f4bde9edc775cd9a8cc8a822.webp?size=80" # Teemo pfp (from azul)
@@ -113,10 +183,44 @@ if __name__ == "__main__":
     if pfp:
         print("Avatar downloaded successfully!")
         print(f"Size: {pfp.size}")  # Shows (width, height)
-        pfp.show()  # Opens the image in your default image viewer
+        # pfp.show()  # Opens the image in your default image viewer
     else:
         print("Failed to download avatar")
 
     circular_pfp = create_circular_pfp(pfp, (150, 150))
 
-    circular_pfp.show()
+    # circular_pfp.show()
+
+    canvas_width = 800
+    canvas_height = 600
+
+    canvas = create_podium_base(canvas_width, canvas_height, (240, 240, 250))
+
+    draw = ImageDraw.Draw(canvas)
+    draw_podium_blocks(draw, 800, 600)
+
+    font_big = ImageFont.truetype("arialbd.ttf", 64)
+    first_height = 350
+    second_height = 250
+    third_height = 200
+    block_width = canvas_width // 3
+    
+    # Calculate center of 1st place block
+    first_x = block_width * 1.5  # Center of middle block
+    first_y = (canvas_height - first_height) + 75  # 100px from top of block
+
+    # Calculate center of 2nd place block
+    second_x = block_width * 0.5
+    second_y = (canvas_height - second_height) + 75
+
+    # Calculate center of 3rd place block
+    third_x = block_width * 2.5
+    third_y = (canvas_height - third_height) + 75
+
+    add_text_to_podium(draw, "Player1", 1, first_x, first_y, font_big)
+    add_text_to_podium(draw, "Player2", 2, second_x, second_y, font_big)
+    add_text_to_podium(draw, "Player3", 3, third_x, third_y, font_big)
+
+    canvas.show()
+
+
