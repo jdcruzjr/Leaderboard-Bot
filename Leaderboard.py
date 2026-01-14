@@ -1,5 +1,6 @@
 import heapq
 import copy 
+import database as db
 
 class Leaderboard:
     """
@@ -95,3 +96,7 @@ class Leaderboard:
     
     def get_name(self):
         return self.name
+    
+    def load_heap(self, scores):
+        for discord_tag, points in scores:
+            self.add_player(discord_tag, points)

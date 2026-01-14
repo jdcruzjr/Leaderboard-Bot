@@ -8,7 +8,7 @@ def init_db():
 
     # USERS table
     c.execute("""
-    CREATE TABLE IF NOT EXISTS USERS (
+    CREATE TABLE IF NOT EXISTS Users (
         discord_id CHAR(20),
         CONSTRAINT users_pk PRIMARY KEY (discord_id)
     );
@@ -16,7 +16,7 @@ def init_db():
 
     # SERVERS table
     c.execute("""
-    CREATE TABLE IF NOT EXISTS SERVERS (
+    CREATE TABLE IF NOT EXISTS Servers (
         guild_id INT,
         guild_name CHAR(100),
         CONSTRAINT servers_pk PRIMARY KEY (guild_id)
@@ -25,7 +25,7 @@ def init_db():
 
     # GAMES table (auto increment)
     c.execute("""
-    CREATE TABLE IF NOT EXISTS GAMES (
+    CREATE TABLE IF NOT EXISTS Games (
         game_id INTEGER PRIMARY KEY AUTOINCREMENT,
         game_name CHAR(100) UNIQUE
     );
@@ -157,12 +157,22 @@ def remove_points(points, guild_id, discord_tag, game_name):
     conn.commit()
     conn.close()
     
-    
-def load_leaderboard(guild_id):
+# Retreive the scores of players in server for a specific game    
+def load_leaderboard_instance(guild_id, game_name):
     conn = sqlite3.connect('leaderboard.db')
     c = conn.cursor()
-    c.execute('query statement goes here')
+    c.execute('SELECT discord_tag, points FROM Scores INNER JOIN Games on Games.game_id == Scores.game_id where Scores.guild_id == ? and game_name == ?', (guild_id, game_name))
+    scores = c.fetchall()
     conn.commit()
     conn.close()
-    return "return variable goes here"
+    return scores
 
+# Get existing games in a server
+def get_games_of_server(guild_id):
+    conn = sqlite3.connect('leaderboard.db')
+    c = conn.cursor()
+    c.execute('SELECT game_name FROM ServerGames INNER JOIN Games on Games.game_id == ServerGames.game_id where Scores.guild_id == ?', (guild_id, ))
+    games = c.fetchall()
+    conn.commit()
+    conn.close()
+    return games
