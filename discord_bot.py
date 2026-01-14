@@ -104,4 +104,39 @@ async def remove_points_error(ctx, error):
         await ctx.send("I couldn’t find that member! Please mention a valid user.")
     elif isinstance(error, commands.BadArgument):
         await ctx.send("Invalid argument! Make sure you provide points as a number or the game name.")
-            
+
+@client.command
+async def create_game(ctx, game:str):
+    guild_id = ctx.guild.id
+    guild_name = ctx.guild.name
+    
+    games_list = db.get_games_of_server(guild_id)
+    
+    if leaderboard_maps[guild_id][game] or (game,) in games_list:
+        await ctx.send('Game leaderboard already exists')
+    else:
+        db.add_game(guild_id,guild_name,game)
+        leaderboard_maps[guild_id][game] = leaderboard.Leaderboard(game)
+        
+@create_game.error
+async def create_game_error(ctx, error):
+    if isinstance(error, commands.BadArgument):
+        await ctx.send("Invalid argument! Make sure you provide a game")
+        
+@client.command
+async def delete_game(ctx, game:str):
+    guild_id = ctx.guild.id
+    guild_name = ctx.guild.name
+    
+    games_list = db.get_games_of_server(guild_id)
+    
+    if not leaderboard_maps[guild_id][game] or (game,) not in games_list:
+        await ctx.send('Game leaderboard doesn\'t exists')
+    else:
+        db.remove_game(guild_id,guild_name,game)
+        leaderboard_maps[guild_id].pop(game, None)
+
+@delete_game.error
+async def delete_game_error(ctx, error):
+    if isinstance(error, commands.BadArgument):
+        await ctx.send("Invalid argument! Make sure you provide a game")

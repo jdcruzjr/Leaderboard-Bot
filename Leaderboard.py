@@ -100,3 +100,4 @@ class Leaderboard:
     def load_heap(self, scores):
         for discord_tag, points in scores:
             self.add_player(discord_tag, points)
+            
