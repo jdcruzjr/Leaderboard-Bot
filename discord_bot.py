@@ -64,9 +64,44 @@ async def on_message(message):
             await message.channel.send(f"Hello big chungus {message.author.mention}")
             
 @client.command
-async def add_points(ctx, arg):
-      await ctx.send('Added Points to User')
-            
+async def add_points(ctx, member: discord.Member, game:str, points: int):
+    guild_id = ctx.guild.id
+    curr_lb = leaderboard_maps[guild_id][game]
+    
+    if curr_lb:
+        db.add_points(guild_id, member, game, int)
+        curr_lb.increase_points(member, points)
+        await ctx.send('Added Points to User')
+    else:
+        await ctx.send('Game leaderboard doesn\'t exist')
 
+
+@add_points.error
+async def add_points_error(ctx, error):
+    if isinstance(error, commands.MemberNotFound):
+        await ctx.send("I couldn’t find that member! Please mention a valid user.")
+    elif isinstance(error, commands.BadArgument):
+        await ctx.send("Invalid argument! Make sure you provide points as a number or the game name.")
             
 client.run(token)
+
+@client.command
+async def remove_points(ctx, member: discord.Member, game:str, points: int):
+    guild_id = ctx.guild.id
+    
+    curr_lb = leaderboard_maps[guild_id][game]
+    if curr_lb:
+        db.remove_points_points(guild_id, member, game, int)
+        curr_lb.decrease_points(member, points)
+        await ctx.send('Added Points to User')
+    else:
+        await ctx.send('Game leaderboard doesn\'t exist')
+    
+    
+@remove_points.error
+async def remove_points_error(ctx, error):
+    if isinstance(error, commands.MemberNotFound):
+        await ctx.send("I couldn’t find that member! Please mention a valid user.")
+    elif isinstance(error, commands.BadArgument):
+        await ctx.send("Invalid argument! Make sure you provide points as a number or the game name.")
+            
