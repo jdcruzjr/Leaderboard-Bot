@@ -69,7 +69,7 @@ async def add_points(ctx, member: discord.Member, game:str, points: int):
     curr_lb = leaderboard_maps[guild_id][game]
     
     if curr_lb:
-        db.add_points(guild_id, member, game, int)
+        db.add_points(guild_id, member, game, points)
         curr_lb.increase_points(member, points)
         await ctx.send('Added Points to User')
     else:
@@ -83,8 +83,6 @@ async def add_points_error(ctx, error):
     elif isinstance(error, commands.BadArgument):
         await ctx.send("Invalid argument! Make sure you provide points as a number or the game name.")
             
-client.run(token)
-
 @client.command
 async def remove_points(ctx, member: discord.Member, game:str, points: int):
     guild_id = ctx.guild.id
@@ -140,3 +138,69 @@ async def delete_game(ctx, game:str):
 async def delete_game_error(ctx, error):
     if isinstance(error, commands.BadArgument):
         await ctx.send("Invalid argument! Make sure you provide a game")
+          
+@client.command
+async def add_player(ctx, member: discord.Member, game_name: str):
+    guild_id = ctx.guild.id
+    player = db.get_player_in_game(guild_id, member, game_name)
+
+    if player is None:
+        
+        curr_lb = leaderboard_maps[guild_id][game_name]
+        if curr_lb:
+            db.add_points(guild_id, member, game_name, 0)
+            curr_lb.add_player(member)
+            await ctx.send('Added Player to Game')
+        else:
+            await ctx.send('Game leaderboard doesn\'t exist')
+        
+    else:
+        await ctx.send("Player already exists in the game")
+
+@add_player.error
+async def add_player_error(ctx, error):
+    if isinstance(error, commands.MemberNotFound):
+        await ctx.send("I couldn’t find that member! Please mention a valid user.")
+    elif isinstance(error, commands.BadArgument):
+        await ctx.send("Invalid argument! Make sure you provide the proper values.")
+
+@client.command
+async def remove_player(ctx, member: discord.Member, game_name: str):
+    guild_id = ctx.guild.id
+    player = db.get_player_in_game(guild_id, member, game_name)
+
+    if player is None:
+        await ctx.send("Player doesn't exist in the game")    
+
+    else:
+        curr_lb = leaderboard_maps[guild_id][game_name]
+        if curr_lb:
+            db.remove_player(guild_id,member,game_name)
+            curr_lb.remove(member)
+            await ctx.send('Removed player from the game')
+
+@remove_player.error
+async def remove_player_error(ctx, error):
+    if isinstance(error, commands.MemberNotFound):
+        await ctx.send("I couldn’t find that member! Please mention a valid user.")
+    elif isinstance(error, commands.BadArgument):
+        await ctx.send("Invalid argument! Make sure you provide the proper values.")
+
+@client.command
+async def reset_players(ctx, game_name):
+    guild_id = ctx.guild.id
+    if db.get_game(game_name):
+        db.reset_all_points_in_game(guild_id, game_name)
+        curr_lb = leaderboard_maps[guild_id][game_name]
+        curr_lb.reset_all_players()
+        
+    else:
+        await ctx.send("Game doesn't exist")
+        
+@reset_players.error
+async def reset_players_error(ctx, error):
+    if isinstance(error, commands.BadArgument):
+        await ctx.send("Invalid argument! Make sure you provide the proper values.")
+
+
+client.run(token)

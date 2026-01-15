@@ -84,6 +84,7 @@ class Leaderboard:
         for player_name, score in range(len(self.lb)):
             self.lb[index] = (0, player_name)
             index += 0
+        heapq.heapify(self.lb)
     
     def change_k(self, k):
         if k < 3 or k != 3 or k != 5 or k!= 7:

@@ -71,13 +71,13 @@ def init_db():
         CONSTRAINT scores_pk PRIMARY KEY (discord_id, game_id, guild_id),
         CONSTRAINT scores_fk_1 FOREIGN KEY (guild_id)
             REFERENCES SERVERS(guild_id)
-            ON DELETE CASCADE ON UPDATE CASCADE,
+            ON UPDATE CASCADE,
         CONSTRAINT scores_fk_2 FOREIGN KEY (game_id)
             REFERENCES GAMES(game_id)
-            ON DELETE CASCADE ON UPDATE CASCADE,
+            ON UPDATE CASCADE,
         CONSTRAINT scores_fk_3 FOREIGN KEY (discord_id)
             REFERENCES USERS(discord_id)
-            ON DELETE CASCADE ON UPDATE CASCADE
+            ON UPDATE CASCADE
     );
     """)
 
@@ -176,3 +176,45 @@ def get_games_of_server(guild_id):
     conn.commit()
     conn.close()
     return games
+
+def get_player_in_game(guild_id, discord_tag, game_name):
+    conn = sqlite3.connect('leaderboard.db')
+    c = conn.cursor()
+    c.execute('SELECT discord_tag FROM Scores INNER JOIN Games on Games.game_id == Scores.game_id where Scores.guild_id == ? and Scores.discord_tag == ? and Games.game_name == ?', (guild_id, discord_tag, game_name ))
+    player = c.fetchone()
+    conn.commit()
+    conn.close()
+    return player
+
+def remove_player(guild_id, discord_tag, game_name):
+    conn = sqlite3.connect('leaderboard.db')
+    c = conn.cursor()
+    c.execute("""
+    DELETE FROM Scores
+    WHERE guild_id = ?
+        AND discord_tag = ?
+        AND game_id = (
+            SELECT game_id
+            FROM Games
+            WHERE game_name = ?
+        )
+    """, (guild_id, discord_tag, game_name))
+    conn.commit()
+    conn.close()
+
+def get_game(guild_id, game_name):
+    conn = sqlite3.connect('leaderboard.db')
+    c = conn.cursor()
+    c.execute('SELECT guild_id FROM ServerGames INNER JOIN Games on Games.game_id == ServerGames.game_id where ServerGames.guild_id == ? and Games.game_name == ?', (guild_id, game_name))
+    player = c.fetchone()
+    conn.commit()
+    conn.close()
+    return player
+
+def reset_all_points_in_game(guild_id, game_name):
+    conn = sqlite3.connect('leaderboard.db')
+    c = conn.cursor()
+    c.execute('UPDATE Scores SET points = 0 where guild_id == ? and game_name == ?', (guild_id, game_name))
+    conn.commit()
+    conn.close()
+    
