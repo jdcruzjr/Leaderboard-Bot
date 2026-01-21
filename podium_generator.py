@@ -57,7 +57,6 @@ def create_circular_pfp(image, size):
 
     return resized_image
 
-
 def create_podium_base(width, height, background_color):
     """
     Create the base canvas for the podium image.
@@ -70,7 +69,7 @@ def create_podium_base(width, height, background_color):
     Returns:
         Image: Blank canvas image
     """
-    canvas = Image.new("RGBA", (width, height), background_color) # Creates blank canvas for podium
+    canvas = Image.new("RGBA", (width, height), background_color)
 
     return canvas
 
@@ -136,21 +135,46 @@ def draw_podium_blocks(draw, canvas_width, canvas_height):
         fill_color=(205, 127, 50)
     ) # Bronze rectangle
 
-def add_text_to_podium(draw, username, position, x, y, font):
+def add_text_to_podium(draw, username, score, position, x, y, font):
     """
-    Add text (username, rank, score) to the podium.
+    Add text (username, score, rank) to the podium.
     
     Args:
         draw (ImageDraw): Drawing context
         username (str): Player's username
+        score (int): Player's score
         position (int): Rank (1, 2, or 3)
         x (int): X coordinate for text
         y (int): Y coordinate for text
         font (ImageFont): Font to use
     """
-    # TODO: Review code and write comments and maybe have it so that coordinates of the texts are calculated within the function
+    # Start with username (and then work way down)
+    username_text = username
 
-    # Draw rank number on podium (e.g. "1", "2", "3")
+    # Get username text dimensions
+    bbox = draw.textbbox((0,0), username_text, font=font)
+    username_width = bbox[2] - bbox[0]
+    username_height = bbox[3] - bbox[1]
+
+    # Center the username at (x, y)
+    username_x = x - (username_width / 2)
+    username_y = y - (username_height / 2)
+    draw.text((username_x, username_y), username_text, font=font, fill=(0,0,0))
+
+    # Next, add score below username
+    score_text = f"{score} pts"
+
+    # Get score text dimensions
+    bbox = draw.textbbox((0,0), score_text, font=font)
+    score_width = bbox[2] - bbox[0]
+    score_height = bbox[3] - bbox[1]
+
+    # Center the score below username
+    score_x = x - (score_width / 2)
+    score_y = username_y + username_height + 10  # 10px below username
+    draw.text((score_x, score_y), score_text, font=font, fill=(0,0,0))
+
+    # Finally, add rank below score
     rank_text = str(position)
 
     # Get rank text dimensions
@@ -158,29 +182,36 @@ def add_text_to_podium(draw, username, position, x, y, font):
     rank_width = bbox[2] - bbox[0]
     rank_height = bbox[3] - bbox[1]
 
-    # Center the rank at (x, y)
+    # Center the rank below score
     rank_x = x - (rank_width / 2)
-    rank_y = y - (rank_height / 2)
-    draw.text((rank_x, rank_y), rank_text, fill = (0,0,0), font=font)
+    rank_y = score_y + score_height + 20  # 10px below score
+    draw.text((rank_x, rank_y), rank_text, font=font, fill=(0,0,0))
 
-    # TODO: Add code to write username below the rank number
-
-
-def generate_podium_image(top_players, output_path="podium.png"):
+def generate_podium_image(leaderboard_heap, member_objects, output_path="podium.png"):
     """
     Main function to generate the complete podium image.
     
     Args:
-        top_players (list): List of dicts with player data
-                           [{username: str, avatar_url: str, score: int}, ...]
+        leaderboard_heap (list): List of tuples with player data
+                           [(-score, player_name), ...]
+        member_objects (list): Dictionary mapping player_name -> discord.Member object
         output_path (str): Where to save the final image
         
     Returns:
         str: Path to the saved image
     """
-    pass 
+    #TODO: What if less than 3 players? (slicing handles this gracefully) What if ties? What if more than 3 players?
+    CANVAS_WIDTH = 800
+    CANVAS_HEIGHT = 800
 
-    # TODO: Put it all together to build podium
+    # Get top 3 players
+    top_players = leaderboard_heap[:3]
+    for i in range(len(top_players)):
+        top_players[i] = (-top_players[i][0], top_players[i][1], i + 1)  # Convert score back to positive
+
+    # Create canvas and draw podium blocks
+    canvas = create_podium_base(CANVAS_WIDTH, CANVAS_HEIGHT, (240, 240, 250))
+    canvas.show()
 
 # For testing purposes
 if __name__ == "__main__":
@@ -199,14 +230,14 @@ if __name__ == "__main__":
     # circular_pfp.show()
 
     canvas_width = 800
-    canvas_height = 600
+    canvas_height = 800
 
     canvas = create_podium_base(canvas_width, canvas_height, (240, 240, 250))
 
     draw = ImageDraw.Draw(canvas)
-    draw_podium_blocks(draw, 800, 600)
+    draw_podium_blocks(draw, canvas_width, canvas_height)
 
-    font_big = ImageFont.truetype("arialbd.ttf", 64)
+    font_big = ImageFont.truetype("arialbd.ttf", 32)
     first_height = 350
     second_height = 250
     third_height = 200
@@ -224,10 +255,13 @@ if __name__ == "__main__":
     third_x = block_width * 2.5
     third_y = (canvas_height - third_height) + 75
 
-    add_text_to_podium(draw, "Player1", 1, first_x, first_y, font_big)
-    add_text_to_podium(draw, "Player2", 2, second_x, second_y, font_big)
-    add_text_to_podium(draw, "Player3", 3, third_x, third_y, font_big)
+    add_text_to_podium(draw, "Player1", 4, 1, first_x, first_y, font_big)
+    add_text_to_podium(draw, "Player2", 2, 2, second_x, second_y, font_big)
+    add_text_to_podium(draw, "Player3", 1, 3, third_x, third_y, font_big)
 
-    canvas.show()
+    # canvas.show()
+
+    generate_podium_image([(-500, "Player1"), (-450, "Player2"), (-400, "Player3")], {}, output_path="test_podium.png")
+
 
 
