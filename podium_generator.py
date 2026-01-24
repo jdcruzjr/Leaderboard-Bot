@@ -5,14 +5,18 @@ Creates a podium-style image with top 3 players' discord pfps
 
 from PIL import Image, ImageDraw, ImageFont
 import requests
+import PIL
 from io import BytesIO
 
-# TODO: Make 1, 3, and 5 place podiums
+# TODO: Make 1 and 5 place podiums
     # Adjust draw_podium_blocks function to make stands based on number of places user wants to display
     # Adjust draw_podium_blocks function to make size of stands based on ties
 # TODO: Account for ties in the leaderboard
     # Adjust above
     # Adjust add_text_to_podium to label podium stands based on standings (if tie -> label both stands with higher ranking)
+# TODO: Add placeholder images when no pfp found
+# TODO: Test with various image formats (webp, png, jpg, gif, etc.)
+# TODO: Polish code (optimize imports, comments, structure, etc.)
 
 def download_pfp(pfp_url):
     """
@@ -102,17 +106,18 @@ def draw_podium_blocks(draw, canvas_width, canvas_height):
         canvas_width (int): Width of canvas
         canvas_height (int): Height of canvas
     """
-    block_width = canvas_width / 3
+    padding = 20
+    block_width = (canvas_width - padding * 4) / 3  # 3 blocks with padding in between
 
-    first_height = 350
-    second_height = 250
-    third_height = 200
+    first_height = canvas_height / 1.5
+    second_height = canvas_height / 2
+    third_height = canvas_height / 2.5
 
     # Draw 2nd Place (Left block)
     draw_podium_block_rounded_top(
         draw, 
-        0, canvas_height - second_height,
-        block_width, canvas_height,
+        padding, canvas_height - second_height,
+        block_width + padding, canvas_height,
         radius=20,
         fill_color=(192, 192, 192)
     ) # Silver rectangle
@@ -120,8 +125,8 @@ def draw_podium_blocks(draw, canvas_width, canvas_height):
     # Draw 1st Place (Middle block)
     draw_podium_block_rounded_top(
         draw, 
-        block_width, canvas_height - first_height,
-        block_width * 2, canvas_height,
+        block_width + padding * 2, canvas_height - first_height,
+        block_width * 2 + padding * 2, canvas_height,
         radius=20,
         fill_color=(255, 215, 0)
     ) # Gold rectangle
@@ -129,13 +134,13 @@ def draw_podium_blocks(draw, canvas_width, canvas_height):
     # Draw 3rd Place (Right block)
     draw_podium_block_rounded_top(
         draw, 
-        block_width * 2, canvas_height - third_height,
-        canvas_width, canvas_height,
+        block_width * 2 + padding * 3, canvas_height - third_height,
+        block_width * 3 + padding * 3, canvas_height,
         radius=20,
         fill_color=(205, 127, 50)
     ) # Bronze rectangle
 
-def add_text_to_podium(draw, username, score, position, x, y, font):
+def add_text_to_podium(draw, username, score, position, x, y):
     """
     Add text (username, score, rank) to the podium.
     
@@ -150,42 +155,66 @@ def add_text_to_podium(draw, username, score, position, x, y, font):
     """
     # Start with username (and then work way down)
     username_text = username
+    username_font = ImageFont.truetype("arialbd.ttf", 32)
 
     # Get username text dimensions
-    bbox = draw.textbbox((0,0), username_text, font=font)
+    bbox = draw.textbbox((0,0), username_text, font=username_font)
     username_width = bbox[2] - bbox[0]
     username_height = bbox[3] - bbox[1]
 
     # Center the username at (x, y)
     username_x = x - (username_width / 2)
     username_y = y - (username_height / 2)
-    draw.text((username_x, username_y), username_text, font=font, fill=(0,0,0))
+    draw.text((username_x, username_y), username_text, font=username_font, fill=(255, 255, 255))
 
     # Next, add score below username
     score_text = f"{score} pts"
+    score_font = ImageFont.truetype("arial.ttf", 20)
 
     # Get score text dimensions
-    bbox = draw.textbbox((0,0), score_text, font=font)
+    bbox = draw.textbbox((0,0), score_text, font=score_font)
     score_width = bbox[2] - bbox[0]
     score_height = bbox[3] - bbox[1]
 
     # Center the score below username
     score_x = x - (score_width / 2)
-    score_y = username_y + username_height + 10  # 10px below username
-    draw.text((score_x, score_y), score_text, font=font, fill=(0,0,0))
+    score_y = username_y + username_height + 20  # 10px below username
+    draw.text((score_x, score_y), score_text, font=score_font, fill=(255, 255, 255))
 
     # Finally, add rank below score
     rank_text = str(position)
+    rank_font = ImageFont.truetype("arialbd.ttf", 48)
 
     # Get rank text dimensions
-    bbox = draw.textbbox((0,0), rank_text, font=font)
+    bbox = draw.textbbox((0,0), rank_text, font=rank_font)
     rank_width = bbox[2] - bbox[0]
     rank_height = bbox[3] - bbox[1]
 
     # Center the rank below score
     rank_x = x - (rank_width / 2)
-    rank_y = score_y + score_height + 20  # 10px below score
-    draw.text((rank_x, rank_y), rank_text, font=font, fill=(0,0,0))
+    rank_y = score_y + score_height + 30  # 10px below score
+    draw.text((rank_x, rank_y), rank_text, font=rank_font, fill=(255, 255, 255))
+
+def add_medal_to_podium(draw, medal, x, y):
+    """
+    Add a medal emoji above the podium.
+
+    Args:
+        draw (ImageDraw): Drawing context
+        medal (str): Medal emoji (e.g., "🥇")
+        x (int): X coordinate
+        y (int): Y coordinate
+    """
+    medal_font = ImageFont.truetype("seguiemj.ttf", 48)
+
+    bbox = draw.textbbox((0,0), medal, font=medal_font)
+    medal_width = bbox[2] - bbox[0]
+    medal_height = bbox[3] - bbox[1]
+
+    medal_x = x - (medal_width / 2)
+    medal_y = y - (medal_height / 2)
+
+    draw.text((medal_x, medal_y), medal, font=medal_font, embedded_color=True)
 
 def generate_podium_image(leaderboard_heap, member_objects, output_path="podium.png"):
     """
@@ -203,65 +232,87 @@ def generate_podium_image(leaderboard_heap, member_objects, output_path="podium.
     #TODO: What if less than 3 players? (slicing handles this gracefully) What if ties? What if more than 3 players?
     CANVAS_WIDTH = 800
     CANVAS_HEIGHT = 800
+    PFP_SIZE = 150
+    padding = 20
+    block_width = (CANVAS_WIDTH - padding * 4) / 3
 
     # Get top 3 players
     top_players = leaderboard_heap[:3]
     for i in range(len(top_players)):
         top_players[i] = (-top_players[i][0], top_players[i][1], i + 1)  # Convert score back to positive
 
-    # Create canvas and draw podium blocks
-    canvas = create_podium_base(CANVAS_WIDTH, CANVAS_HEIGHT, (240, 240, 250))
-    canvas.show()
+    canvas = create_podium_base(CANVAS_WIDTH, CANVAS_HEIGHT, (54, 69, 79)) # or (51, 51, 51) charcoal gray
+    
+    draw = ImageDraw.Draw(canvas)
+    draw_podium_blocks(draw, CANVAS_WIDTH, CANVAS_HEIGHT)
+
+    disc_pfp = []
+    for player in top_players:
+        score, player_name, position = player
+        member = member_objects.get(player_name)
+        if member:
+            pfp_url = str(member.avatar.url)
+            pfp_image = download_pfp(pfp_url)
+            if pfp_image:
+                circular_pfp = create_circular_pfp(pfp_image, (PFP_SIZE, PFP_SIZE))
+                disc_pfp.append(circular_pfp)
+            else: # Failed to download pfp
+                disc_pfp.append(None)
+        else: # Member not found
+            disc_pfp.append(None)
+
+    medal_img = ""
+    
+    first_block_center = (CANVAS_WIDTH / 2)
+    first_x = int(first_block_center - (PFP_SIZE / 2))
+    first_y = int(CANVAS_HEIGHT - (CANVAS_HEIGHT / 1.5) - PFP_SIZE - 20)
+    canvas.paste(disc_pfp[0], (first_x, first_y), disc_pfp[0]) if disc_pfp[0] else None
+
+    second_block_center = (block_width / 2) + padding
+    second_x = int(second_block_center - (PFP_SIZE / 2))
+    second_y = int(CANVAS_HEIGHT - (CANVAS_HEIGHT / 2) - PFP_SIZE - 20)
+    canvas.paste(disc_pfp[1], (second_x, second_y), disc_pfp[1]) if disc_pfp[1] else None
+
+    third_block_center = (CANVAS_WIDTH - (block_width / 2) - padding)
+    third_x = int(third_block_center - (PFP_SIZE / 2))
+    third_y = int(CANVAS_HEIGHT - (CANVAS_HEIGHT / 2.5) - PFP_SIZE - 20)
+    canvas.paste(disc_pfp[2], (third_x, third_y), disc_pfp[2]) if disc_pfp[2] else None
+
+    first_text_y = (CANVAS_HEIGHT - (CANVAS_HEIGHT / 1.5)) + 50
+    add_text_to_podium(draw, top_players[0][1], top_players[0][0], 1, first_block_center, first_text_y)
+
+    second_text_y = (CANVAS_HEIGHT - (CANVAS_HEIGHT / 2)) + 50
+    add_text_to_podium(draw, top_players[1][1], top_players[1][0], 2, second_block_center, second_text_y)
+
+    third_text_y = (CANVAS_HEIGHT - (CANVAS_HEIGHT / 2.5)) + 50
+    add_text_to_podium(draw, top_players[2][1], top_players[2][0], 3, third_block_center, third_text_y)
+
+    add_medal_to_podium(draw, "🥇", first_block_center, first_y - 40)
+    add_medal_to_podium(draw, "🥈", second_block_center, second_y - 40)
+    add_medal_to_podium(draw, "🥉", third_block_center, third_y - 40)
+
+    canvas.save(output_path)
+
+    return output_path
 
 # For testing purposes
 if __name__ == "__main__":
     test_url = "https://cdn.discordapp.com/avatars/224609705555656705/f5694ee8f4bde9edc775cd9a8cc8a822.webp?size=80" # Teemo pfp (from azul)
 
-    pfp = download_pfp(test_url)
-    if pfp:
-        print("Avatar downloaded successfully!")
-        print(f"Size: {pfp.size}")  # Shows (width, height)
-        # pfp.show()  # Opens the image in your default image viewer
-    else:
-        print("Failed to download avatar")
+    test_heap = [(-500, "Player1"), (-450, "Player2"), (-400, "Player3")]
 
-    circular_pfp = create_circular_pfp(pfp, (150, 150))
-
-    # circular_pfp.show()
-
-    canvas_width = 800
-    canvas_height = 800
-
-    canvas = create_podium_base(canvas_width, canvas_height, (240, 240, 250))
-
-    draw = ImageDraw.Draw(canvas)
-    draw_podium_blocks(draw, canvas_width, canvas_height)
-
-    font_big = ImageFont.truetype("arialbd.ttf", 32)
-    first_height = 350
-    second_height = 250
-    third_height = 200
-    block_width = canvas_width // 3
+    class MockMember:
+        def __init__(self, url):
+            self.avatar = type('obj', (object,), {'url': url})()
     
-    # Calculate center of 1st place block
-    first_x = block_width * 1.5  # Center of middle block
-    first_y = (canvas_height - first_height) + 75  # 100px from top of block
+    test_member_objects = {
+        "Player1": MockMember(test_url),
+        "Player2": MockMember(test_url),
+        "Player3": MockMember(test_url)
+    }
 
-    # Calculate center of 2nd place block
-    second_x = block_width * 0.5
-    second_y = (canvas_height - second_height) + 75
-
-    # Calculate center of 3rd place block
-    third_x = block_width * 2.5
-    third_y = (canvas_height - third_height) + 75
-
-    add_text_to_podium(draw, "Player1", 4, 1, first_x, first_y, font_big)
-    add_text_to_podium(draw, "Player2", 2, 2, second_x, second_y, font_big)
-    add_text_to_podium(draw, "Player3", 1, 3, third_x, third_y, font_big)
-
-    # canvas.show()
-
-    generate_podium_image([(-500, "Player1"), (-450, "Player2"), (-400, "Player3")], {}, output_path="test_podium.png")
+    result = generate_podium_image(test_heap, test_member_objects, "test_podium.png")
+    print(f"Podium image saved to: {result}")
 
 
 
