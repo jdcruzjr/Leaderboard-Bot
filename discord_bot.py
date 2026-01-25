@@ -1,3 +1,4 @@
+from email.mime import image
 import discord
 from discord import Embed
 import os 
@@ -232,7 +233,7 @@ async def show_players(ctx, game_name):
             if name in member_lookup
         }   
         
-        image = pg.generate_podium_image(lb, member_objects)
+        image_path = pg.generate_podium_image(lb, member_objects, "podium.png")
         
         lb_names = lb.get_list_of_players_ordered()
         
@@ -248,8 +249,10 @@ async def show_players(ctx, game_name):
                 color=0x3498db
             )
             
-            embed.set_image(url=image)
-            await ctx.send(embed=embed)
+            # Attach the image file and reference it in the embed
+            file = discord.File(image_path, filename="podium.png")
+            embed.set_image(url="attachment://podium.png")
+            await ctx.send(file=file, embed=embed)
 
         else:
             title_lb = f"{game_name} Leaderboard"
@@ -259,7 +262,8 @@ async def show_players(ctx, game_name):
                 color=0x3498db
             )
             
-            embed.set_image(url=image)
-            await ctx.send(embed=embed)
+            file = discord.File(image_path, filename="podium.png")
+            embed.set_image(url="attachment://podium.png")
+            await ctx.send(file=file, embed=embed)
 
 client.run(token)
