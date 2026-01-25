@@ -237,15 +237,14 @@ async def show_players(ctx, game_name):
         lb_names = lb.get_list_of_players_ordered()
         
         if len(lb_names) > 3:
-            
             title_lb = f"{game_name} Leaderboard"
             lb_names = lb_names[2:]
             
             names_str_list = "\n".join(lb_names)
             
             embed = Embed(
-                title= title_lb
-                description=lb_names
+                title=title_lb,           
+                description=names_str_list, 
                 color=0x3498db
             )
             
@@ -253,17 +252,14 @@ async def show_players(ctx, game_name):
             await ctx.send(embed=embed)
 
         else:
-            
             title_lb = f"{game_name} Leaderboard"
-                        
+            
             embed = Embed(
-                title= title_lb
+                title=title_lb,
                 color=0x3498db
             )
             
             embed.set_image(url=image)
             await ctx.send(embed=embed)
-
-            
 
 client.run(token)
