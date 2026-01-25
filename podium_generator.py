@@ -251,7 +251,7 @@ def generate_podium_image(leaderboard_heap, member_objects, output_path="podium.
         score, player_name, position = player
         member = member_objects.get(player_name)
         if member:
-            pfp_url = str(member.avatar.url)
+            pfp_url = str(member.display_avatar.url)
             pfp_image = download_pfp(pfp_url)
             if pfp_image:
                 circular_pfp = create_circular_pfp(pfp_image, (PFP_SIZE, PFP_SIZE))

@@ -93,7 +93,8 @@ class Leaderboard:
             self.k = k
             
     def get_list_of_players_ordered(self):
-        return copy.deepcopy(self.lb)
+        names_ordered = [s for _, s in self.lb]
+        return names_ordered
     
     def get_name(self):
         return self.name

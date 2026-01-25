@@ -163,7 +163,6 @@ def load_leaderboard_instance(guild_id, game_name):
     c = conn.cursor()
     c.execute('SELECT discord_tag, points FROM Scores INNER JOIN Games on Games.game_id == Scores.game_id where Scores.guild_id == ? and game_name == ?', (guild_id, game_name))
     scores = c.fetchall()
-    conn.commit()
     conn.close()
     return scores
 
@@ -173,7 +172,6 @@ def get_games_of_server(guild_id):
     c = conn.cursor()
     c.execute('SELECT game_name FROM ServerGames INNER JOIN Games on Games.game_id == ServerGames.game_id where Scores.guild_id == ?', (guild_id, ))
     games = c.fetchall()
-    conn.commit()
     conn.close()
     return games
 
@@ -182,7 +180,6 @@ def get_player_in_game(guild_id, discord_tag, game_name):
     c = conn.cursor()
     c.execute('SELECT discord_tag FROM Scores INNER JOIN Games on Games.game_id == Scores.game_id where Scores.guild_id == ? and Scores.discord_tag == ? and Games.game_name == ?', (guild_id, discord_tag, game_name ))
     player = c.fetchone()
-    conn.commit()
     conn.close()
     return player
 
@@ -207,7 +204,6 @@ def get_game(guild_id, game_name):
     c = conn.cursor()
     c.execute('SELECT guild_id FROM ServerGames INNER JOIN Games on Games.game_id == ServerGames.game_id where ServerGames.guild_id == ? and Games.game_name == ?', (guild_id, game_name))
     player = c.fetchone()
-    conn.commit()
     conn.close()
     return player
 
@@ -218,3 +214,10 @@ def reset_all_points_in_game(guild_id, game_name):
     conn.commit()
     conn.close()
     
+def get_player_list_in_game(guild_id, game_name):
+    conn = sqlite3.connect('leaderboard.db')
+    c = conn.cursor()
+    c.execute('SELECT discord_tag FROM Scores INNER JOIN Games on Games.game_id == Scores.game_id where Scores.guild_id == ? and Games.game_name == ?', (guild_id, game_name ))
+    players_list = c.fetchall()
+    conn.close()
+    return players_list

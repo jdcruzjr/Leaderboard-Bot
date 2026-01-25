@@ -1,10 +1,12 @@
 import discord
+from discord import Embed
 import os 
 from dotenv import load_dotenv
 from discord.ext import commands
 import leaderboard
 import podium_generator
 import database as db 
+import podium_generator as pg
 
 intents = discord.Intents.default()
 intents.message_content = True
@@ -69,8 +71,8 @@ async def add_points(ctx, member: discord.Member, game:str, points: int):
     curr_lb = leaderboard_maps[guild_id][game]
     
     if curr_lb:
-        db.add_points(guild_id, member, game, points)
-        curr_lb.increase_points(member, points)
+        db.add_points(guild_id, member.name, game, points)
+        curr_lb.increase_points(member.name, points)
         await ctx.send('Added Points to User')
     else:
         await ctx.send('Game leaderboard doesn\'t exist')
@@ -89,8 +91,8 @@ async def remove_points(ctx, member: discord.Member, game:str, points: int):
     
     curr_lb = leaderboard_maps[guild_id][game]
     if curr_lb:
-        db.remove_points_points(guild_id, member, game, int)
-        curr_lb.decrease_points(member, points)
+        db.remove_points_points(guild_id, member.name, game, int)
+        curr_lb.decrease_points(member.name, points)
         await ctx.send('Added Points to User')
     else:
         await ctx.send('Game leaderboard doesn\'t exist')
@@ -142,14 +144,14 @@ async def delete_game_error(ctx, error):
 @client.command
 async def add_player(ctx, member: discord.Member, game_name: str):
     guild_id = ctx.guild.id
-    player = db.get_player_in_game(guild_id, member, game_name)
+    player = db.get_player_in_game(guild_id, member.name, game_name)
 
     if player is None:
         
         curr_lb = leaderboard_maps[guild_id][game_name]
         if curr_lb:
-            db.add_points(guild_id, member, game_name, 0)
-            curr_lb.add_player(member)
+            db.add_points(guild_id, member.name, game_name, 0)
+            curr_lb.add_player(member.name)
             await ctx.send('Added Player to Game')
         else:
             await ctx.send('Game leaderboard doesn\'t exist')
@@ -167,7 +169,7 @@ async def add_player_error(ctx, error):
 @client.command
 async def remove_player(ctx, member: discord.Member, game_name: str):
     guild_id = ctx.guild.id
-    player = db.get_player_in_game(guild_id, member, game_name)
+    player = db.get_player_in_game(guild_id, member.name, game_name)
 
     if player is None:
         await ctx.send("Player doesn't exist in the game")    
@@ -175,8 +177,8 @@ async def remove_player(ctx, member: discord.Member, game_name: str):
     else:
         curr_lb = leaderboard_maps[guild_id][game_name]
         if curr_lb:
-            db.remove_player(guild_id,member,game_name)
-            curr_lb.remove(member)
+            db.remove_player(guild_id, member.name, game_name)
+            curr_lb.remove(member.name)
             await ctx.send('Removed player from the game')
 
 @remove_player.error
@@ -202,5 +204,66 @@ async def reset_players_error(ctx, error):
     if isinstance(error, commands.BadArgument):
         await ctx.send("Invalid argument! Make sure you provide the proper values.")
 
+
+@client.command
+async def show_players(ctx, game_name):
+    guild_id = ctx.guild.id
+    
+    lb = leaderboard_maps[guild_id][game_name]
+    
+    if not lb:
+        await ctx.send('Game leaderboard doesn\'t exists')
+    else:
+        
+        players_list = db.get_player_list_in_game(guild_id, game_name)
+        player_names = [name_tuple[0] for name_tuple in players_list]
+        
+        
+        # member name -> member object for guild
+        member_lookup = {
+            member.name: member
+            for member in ctx.guild.members
+        }
+
+        # member name -> member object for game in guild
+        member_objects =  {
+            name: member_lookup.get(name)
+            for name in player_names
+            if name in member_lookup
+        }   
+        
+        image = pg.generate_podium_image(lb, member_objects)
+        
+        lb_names = lb.get_list_of_players_ordered()
+        
+        if len(lb_names) > 3:
+            
+            title_lb = f"{game_name} Leaderboard"
+            lb_names = lb_names[2:]
+            
+            names_str_list = "\n".join(lb_names)
+            
+            embed = Embed(
+                title= title_lb
+                description=lb_names
+                color=0x3498db
+            )
+            
+            embed.set_image(url=image)
+            await ctx.send(embed=embed)
+
+        else:
+            
+            title_lb = f"{game_name} Leaderboard"
+                        
+            embed = Embed(
+                title= title_lb
+                color=0x3498db
+            )
+            
+            embed.set_image(url=image)
+            await ctx.send(embed=embed)
+
+            
 
 client.run(token)
