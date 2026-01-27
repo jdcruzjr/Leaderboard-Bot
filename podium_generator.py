@@ -2,7 +2,7 @@
 Podium image generator for Discord leaderboard bot.
 Creates a podium-style image with top 3 players' discord pfps
 """
-
+from io import BytesIO
 from PIL import Image, ImageDraw, ImageFont
 import requests
 import PIL
@@ -291,9 +291,11 @@ def generate_podium_image(leaderboard_heap, member_objects, output_path="podium.
     add_medal_to_podium(draw, "🥈", second_block_center, second_y - 40)
     add_medal_to_podium(draw, "🥉", third_block_center, third_y - 40)
 
-    canvas.save(output_path)
+    img_bytes = BytesIO()
+    canvas.save(img_bytes, format="PNG")
+    img_bytes.seek(0)
 
-    return output_path
+    return img_bytes
 
 # For testing purposes
 if __name__ == "__main__":
@@ -311,7 +313,7 @@ if __name__ == "__main__":
         "Player3": MockMember(test_url)
     }
 
-    result = generate_podium_image(test_heap, test_member_objects, "test_podium.png")
+    result = generate_podium_image(test_heap, test_member_objects, "test_podium.png")    
     print(f"Podium image saved to: {result}")
 
 

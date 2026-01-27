@@ -232,9 +232,10 @@ async def show_players(ctx, game_name):
             if name in member_lookup
         }   
         
-        image = pg.generate_podium_image(lb, member_objects)
+        image_bytes = pg.generate_podium_image(lb, member_objects)
         
         lb_names = lb.get_list_of_players_ordered()
+        file = discord.File(fp=image_bytes, filename="podium.png")
         
         if len(lb_names) > 3:
             title_lb = f"{game_name} Leaderboard"
@@ -248,8 +249,8 @@ async def show_players(ctx, game_name):
                 color=0x3498db
             )
             
-            embed.set_image(url=image)
-            await ctx.send(embed=embed)
+            embed.set_image(url="attachment://podium.png")
+            await ctx.send(embed=embed, file=file)
 
         else:
             title_lb = f"{game_name} Leaderboard"
@@ -259,7 +260,7 @@ async def show_players(ctx, game_name):
                 color=0x3498db
             )
             
-            embed.set_image(url=image)
-            await ctx.send(embed=embed)
+            embed.set_image(url="attachment://podium.png")
+            await ctx.send(embed=embed, file=file)
 
 client.run(token)
