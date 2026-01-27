@@ -233,38 +233,28 @@ async def show_players(ctx, game_name):
             if name in member_lookup
         }   
         
-        image_path = pg.generate_podium_image(lb, member_objects, "podium.png")
+        image_bytes = pg.generate_podium_image(lb, member_objects, "podium.png")
         
         lb_names = lb.get_list_of_players_ordered()
         file = discord.File(fp=image_bytes, filename="podium.png")
+        title_lb = f"{game_name} Leaderboard"
         
         if len(lb_names) > 3:
-            title_lb = f"{game_name} Leaderboard"
             lb_names = lb_names[2:]
-            
             names_str_list = "\n".join(lb_names)
-            
+
             embed = Embed(
-                title=title_lb,           
-                description=names_str_list, 
+                title=title_lb,
+                description=names_str_list,
                 color=0x3498db
             )
-            
-            # Attach the image file and reference it in the embed
-            file = discord.File(image_path, filename="podium.png")
-            embed.set_image(url="attachment://podium.png")
-            await ctx.send(file=file, embed=embed)
-
         else:
-            title_lb = f"{game_name} Leaderboard"
-            
             embed = Embed(
                 title=title_lb,
                 color=0x3498db
             )
-            
-            file = discord.File(image_path, filename="podium.png")
-            embed.set_image(url="attachment://podium.png")
-            await ctx.send(file=file, embed=embed)
+
+        embed.set_image(url="attachment://podium.png")
+        await ctx.send(embed=embed, file=file)
 
 client.run(token)
