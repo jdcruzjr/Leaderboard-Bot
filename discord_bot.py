@@ -1,4 +1,3 @@
-from email.mime import image
 import discord
 from discord import Embed
 import os 
@@ -8,15 +7,15 @@ import leaderboard
 import podium_generator
 import database as db 
 import podium_generator as pg
+from discord import Intents
 
 intents = discord.Intents.default()
 intents.message_content = True
 intents.guilds = True 
 
 load_dotenv()
-client = discord.Client(intents=intents)
 token = os.getenv('token')
-client = commands.Bot(command_prefix="!")
+client = commands.Bot(command_prefix="!", intents=intents)
 
 # Server - > { Game -> Leaderboard instance } 
 leaderboard_maps = {}
@@ -66,17 +65,19 @@ async def on_message(message):
         if user_message.lower() == "hello":
             await message.channel.send(f"Hello big chungus {message.author.mention}")
             
-@client.command
+    await client.process_commands(message)
+            
+@client.command()
 async def add_points(ctx, member: discord.Member, game:str, points: int):
     guild_id = ctx.guild.id
-    curr_lb = leaderboard_maps[guild_id][game]
     
-    if curr_lb:
+    if game in leaderboard_maps[guild_id]:
+        curr_lb = leaderboard_maps[guild_id][game]
         db.add_points(guild_id, member.name, game, points)
         curr_lb.increase_points(member.name, points)
         await ctx.send('Added Points to User')
     else:
-        await ctx.send('Game leaderboard doesn\'t exist')
+        await ctx.send("Game leaderboard doesn't exist")
 
 
 @add_points.error
@@ -86,13 +87,13 @@ async def add_points_error(ctx, error):
     elif isinstance(error, commands.BadArgument):
         await ctx.send("Invalid argument! Make sure you provide points as a number or the game name.")
             
-@client.command
-async def remove_points(ctx, member: discord.Member, game:str, points: int):
+@client.command()
+async def remove_points(ctx, member: discord.Member, game:str, points: float):
     guild_id = ctx.guild.id
     
-    curr_lb = leaderboard_maps[guild_id][game]
-    if curr_lb:
-        db.remove_points_points(guild_id, member.name, game, int)
+    if game in leaderboard_maps[guild_id]:
+        curr_lb = leaderboard_maps[guild_id][game]
+        db.remove_points_points(guild_id, member.name, game, points)
         curr_lb.decrease_points(member.name, points)
         await ctx.send('Added Points to User')
     else:
@@ -106,7 +107,7 @@ async def remove_points_error(ctx, error):
     elif isinstance(error, commands.BadArgument):
         await ctx.send("Invalid argument! Make sure you provide points as a number or the game name.")
 
-@client.command
+@client.command()
 async def create_game(ctx, game:str):
     guild_id = ctx.guild.id
     guild_name = ctx.guild.name
@@ -124,7 +125,7 @@ async def create_game_error(ctx, error):
     if isinstance(error, commands.BadArgument):
         await ctx.send("Invalid argument! Make sure you provide a game")
         
-@client.command
+@client.command()
 async def delete_game(ctx, game:str):
     guild_id = ctx.guild.id
     guild_name = ctx.guild.name
@@ -142,15 +143,15 @@ async def delete_game_error(ctx, error):
     if isinstance(error, commands.BadArgument):
         await ctx.send("Invalid argument! Make sure you provide a game")
           
-@client.command
+@client.command()
 async def add_player(ctx, member: discord.Member, game_name: str):
     guild_id = ctx.guild.id
     player = db.get_player_in_game(guild_id, member.name, game_name)
 
     if player is None:
         
-        curr_lb = leaderboard_maps[guild_id][game_name]
-        if curr_lb:
+        if game_name in leaderboard_maps[guild_id]:
+            curr_lb = leaderboard_maps[guild_id][game_name]
             db.add_points(guild_id, member.name, game_name, 0)
             curr_lb.add_player(member.name)
             await ctx.send('Added Player to Game')
@@ -167,7 +168,7 @@ async def add_player_error(ctx, error):
     elif isinstance(error, commands.BadArgument):
         await ctx.send("Invalid argument! Make sure you provide the proper values.")
 
-@client.command
+@client.command()
 async def remove_player(ctx, member: discord.Member, game_name: str):
     guild_id = ctx.guild.id
     player = db.get_player_in_game(guild_id, member.name, game_name)
@@ -176,11 +177,13 @@ async def remove_player(ctx, member: discord.Member, game_name: str):
         await ctx.send("Player doesn't exist in the game")    
 
     else:
-        curr_lb = leaderboard_maps[guild_id][game_name]
-        if curr_lb:
+        if game_name in leaderboard_maps[guild_id]:
+            curr_lb = leaderboard_maps[guild_id][game_name]
             db.remove_player(guild_id, member.name, game_name)
             curr_lb.remove(member.name)
             await ctx.send('Removed player from the game')
+        else:
+            await ctx.send("Game doesn't exist")
 
 @remove_player.error
 async def remove_player_error(ctx, error):
@@ -189,10 +192,11 @@ async def remove_player_error(ctx, error):
     elif isinstance(error, commands.BadArgument):
         await ctx.send("Invalid argument! Make sure you provide the proper values.")
 
-@client.command
+@client.command()
 async def reset_players(ctx, game_name):
     guild_id = ctx.guild.id
-    if db.get_game(game_name):
+    if db.get_game(game_name) and game_name in leaderboard_maps[guild_id]:
+        
         db.reset_all_points_in_game(guild_id, game_name)
         curr_lb = leaderboard_maps[guild_id][game_name]
         curr_lb.reset_all_players()
@@ -206,16 +210,15 @@ async def reset_players_error(ctx, error):
         await ctx.send("Invalid argument! Make sure you provide the proper values.")
 
 
-@client.command
+@client.command()
 async def show_players(ctx, game_name):
     guild_id = ctx.guild.id
     
-    lb = leaderboard_maps[guild_id][game_name]
-    
-    if not lb:
+    if game_name not in leaderboard_maps[guild_id] :
         await ctx.send('Game leaderboard doesn\'t exists')
     else:
         
+        lb = leaderboard_maps[guild_id][game_name]
         players_list = db.get_player_list_in_game(guild_id, game_name)
         player_names = [name_tuple[0] for name_tuple in players_list]
         
@@ -256,5 +259,11 @@ async def show_players(ctx, game_name):
 
         embed.set_image(url="attachment://podium.png")
         await ctx.send(embed=embed, file=file)
+        
+@show_players.error
+async def show_players_error(ctx, error):
+    if isinstance(error, commands.BadArgument):
+        await ctx.send("Invalid argument! Make sure you provide the proper values.")
+
 
 client.run(token)
