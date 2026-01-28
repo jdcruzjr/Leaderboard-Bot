@@ -169,7 +169,7 @@ def load_leaderboard_instance(guild_id, game_name):
 def get_games_of_server(guild_id):
     conn = sqlite3.connect('leaderboard.db')
     c = conn.cursor()
-    c.execute('SELECT game_name FROM ServerGames INNER JOIN Games on Games.game_id == ServerGames.game_id where Scores.guild_id == ?', (guild_id, ))
+    c.execute('SELECT game_name FROM ServerGames INNER JOIN Games on Games.game_id == ServerGames.game_id where ServerGames.guild_id == ?', (guild_id, ))
     games = c.fetchall()
     conn.close()
     return games
