@@ -28,10 +28,10 @@ async def on_ready():
     
     for guild in client.guilds:
         
-        if guild.guild_id not in leaderboard_maps:
-            leaderboard_maps[guild.guild_id] = {}
+        if guild.id not in leaderboard_maps:
+            leaderboard_maps[guild.id] = {}
         
-        game_list = db.get_games_of_server(guild.guild_id)
+        game_list = db.get_games_of_server(guild.id)
         # If server has games in db to load
         if game_list:
             
@@ -41,13 +41,13 @@ async def on_ready():
                 temp_lb = leaderboard.Leaderboard(game)
                 
                 # Get discord tags and points associated with the game
-                scores = db.load_leaderboard_instance(guild.guild_id, game)
+                scores = db.load_leaderboard_instance(guild.id, game)
                 
                 # Add to heap
                 temp_lb.load_heap(scores)
                 
                 # Add to map
-                leaderboard_maps[guild.guild_id][game] = temp_lb
+                leaderboard_maps[guild.id][game] = temp_lb
     
     
 @client.event
